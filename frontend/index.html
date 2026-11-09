@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#f5f7fb">
+  <title>ScamShield — Check before you trust</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/" aria-label="ScamShield home">
+      <span class="brand-mark">S</span><span>Scam<span class="brand-blue">Shield</span></span>
+    </a>
+    <nav aria-label="Main navigation">
+      <a class="nav-link active" href="#checker">Checker</a>
+      <a class="nav-link" href="#safety">Safety tips</a>
+    </nav>
+    <div class="topbar-actions">
+      <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Toggle dark mode" title="Toggle color theme">
+        <span class="theme-toggle-icon light-icon" aria-hidden="true">☀️</span>
+        <span class="theme-toggle-icon dark-icon" aria-hidden="true">🌙</span>
+        <span id="theme-text" class="theme-text">Dark</span>
+      </button>
+      <span class="privacy-pill"><span class="dot"></span> Privacy-first demo</span>
+    </div>
+  </header>
+
+  <main class="page-shell">
+    <section class="hero" id="checker">
+      <div class="eyebrow"><span class="eyebrow-line"></span> DIGITAL SAFETY ASSISTANT</div>
+      <h1>Pause. Check.<br><span>Stay protected.</span></h1>
+      <p class="hero-copy">Check suspicious messages, links and call audio recordings before you respond, click or share personal information.</p>
+    </section>
+
+    <section class="workspace">
+      <div class="panel checker-panel">
+        <div class="panel-heading">
+          <div>
+            <p class="section-kicker">SCAMSHIELD CHECK</p>
+            <h2>What would you like to check?</h2>
+          </div>
+          <span class="step-label">01 / ANALYZE</span>
+        </div>
+
+        <div class="tabs" role="tablist" aria-label="Content type">
+          <button class="tab active" role="tab" aria-selected="true" data-tab="message">▤ <span>Message</span></button>
+          <button class="tab" role="tab" aria-selected="false" data-tab="link">↗ <span>Link</span></button>
+          <button class="tab" role="tab" aria-selected="false" data-tab="audio">◖ <span>Audio</span></button>
+        </div>
+
+        <div id="message-pane" class="tab-pane">
+          <label class="field-label" for="message-input">PASTE THE MESSAGE</label>
+          <textarea id="message-input" maxlength="5000" placeholder="Paste an SMS, WhatsApp message or email text here..."></textarea>
+          <div class="input-meta"><span>Do not include passwords, OTPs or private account details.</span><span id="char-count">0 / 5000</span></div>
+          <div class="samples">
+            <span class="sample-label">TRY A SAMPLE</span>
+            <button class="sample-chip" data-sample="scam">Fake KYC</button>
+            <button class="sample-chip" data-sample="otp">Bank OTP</button>
+            <button class="sample-chip" data-sample="prize">Lottery win</button>
+            <button class="sample-chip" data-sample="normal">Normal message</button>
+          </div>
+        </div>
+
+        <div id="link-pane" class="tab-pane hidden">
+          <label class="field-label" for="url-input">PASTE THE LINK</label>
+          <input id="url-input" type="url" maxlength="2048" placeholder="https://example.com/verify?redirect=https://amaz0n-fake.com">
+          <div class="input-meta">
+            <span class="field-help">ScamShield checks hostname, protocols, and URL query parameters. It will not visit the site.</span>
+            <span id="url-param-indicator" class="param-badge hidden">Parameter detected</span>
+          </div>
+          <div class="samples">
+            <span class="sample-label">TRY A SAMPLE LINK</span>
+            <button class="sample-chip" data-url="https://example.com/login?redirect=https://amaz0n-fake.com/login">Redirect parameter</button>
+            <button class="sample-chip" data-url="https://bank.example.com/auth?token=secret987&cvv=123">Credential parameter</button>
+            <button class="sample-chip" data-url="https://update-service.example.com/download?file=security_patch.exe">File download parameter</button>
+            <button class="sample-chip" data-url="http://verify.account.example.com/login">Suspicious HTTP link</button>
+            <button class="sample-chip" data-url="https://example.com/search?q=safe">Safe link with parameter</button>
+          </div>
+        </div>
+
+        <div id="audio-pane" class="tab-pane hidden">
+          <div class="audio-panel-wrap">
+            <div class="audio-control-bar">
+              <div class="audio-record-box">
+                <button id="record-btn" class="record-btn" type="button" aria-label="Start voice recording">
+                  <span class="record-dot"></span>
+                  <span id="record-btn-text">Record Voice / Call</span>
+                </button>
+                <span id="record-timer" class="record-timer hidden">00:00</span>
+                <span id="record-status" class="record-status">Click to speak or dictate a call conversation</span>
+              </div>
+              <div class="audio-upload-box">
+                <label for="audio-file-input" class="audio-upload-label" tabindex="0" role="button">
+                  <span class="upload-icon">📁</span>
+                  <span id="upload-label-text">Upload Audio File</span>
+                </label>
+                <input type="file" id="audio-file-input" accept="audio/*,.mp3,.wav,.ogg,.m4a,.webm" class="visually-hidden">
+                <span id="audio-file-name" class="audio-file-name">Supports .mp3, .wav, .m4a</span>
+              </div>
+            </div>
+
+            <audio id="audio-preview" class="audio-preview hidden" controls></audio>
+
+            <label class="field-label" for="audio-transcript-input">CALL CONVERSATION / AUDIO TRANSCRIPT</label>
+            <textarea id="audio-transcript-input" maxlength="10000" placeholder="Type, paste, speak, or select a simulated suspicious call scenario below..."></textarea>
+            <div class="input-meta">
+              <span>Speech recognition, uploaded audio, or simulated scenarios are checked in memory.</span>
+              <span id="audio-char-count">0 / 10000</span>
+            </div>
+
+            <div class="samples">
+              <span class="sample-label">TRY A SAMPLE CALL</span>
+              <button class="sample-chip" data-audio-sample="digital_arrest">Digital Arrest Threat</button>
+              <button class="sample-chip" data-audio-sample="kyc_threat">Fake Bank KYC Call</button>
+              <button class="sample-chip" data-audio-sample="lottery_call">Prize Lottery Advance Fee</button>
+              <button class="sample-chip" data-audio-sample="normal_call">Doctor Appointment</button>
+              <button id="play-sample-audio-btn" class="sample-chip sample-audio-play" type="button" title="Hear this call spoken aloud">🔊 Listen Call</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="action-row">
+          <span class="privacy-note">⌑ Your content is analyzed in memory and is not saved by this demo.</span>
+          <button id="analyze-button" class="primary-button">Analyze now <span>→</span></button>
+        </div>
+        <div id="error-box" class="error-box hidden" role="alert"></div>
+      </div>
+
+      <aside class="side-note">
+        <div class="side-icon">✳</div>
+        <h3>Think before you tap.</h3>
+        <p>Scammers often create urgency, impersonate trusted organisations and ask for sensitive information.</p>
+        <a href="#safety">View safety tips <span>→</span></a>
+        <div class="side-divider"></div>
+        <div class="mini-stat"><strong>01</strong><span>Check the sender / caller</span></div>
+        <div class="mini-stat"><strong>02</strong><span>Look for pressure & coercion</span></div>
+        <div class="mini-stat"><strong>03</strong><span>Verify parameters & URLs</span></div>
+      </aside>
+    </section>
+
+    <section id="result-section" class="result-section hidden" aria-live="polite">
+      <div class="result-header">
+        <div><p class="section-kicker">ANALYSIS RESULT</p><h2>Your check results</h2></div>
+        <button id="reset-button" class="text-button">New check ↗</button>
+      </div>
+      <div id="result-card" class="result-card">
+        <div class="result-main">
+          <div class="verdict-symbol" id="verdict-symbol" aria-hidden="true">!</div>
+          <div class="verdict-copy">
+            <span id="verdict-eyebrow" class="verdict-eyebrow">RESULT</span>
+            <h3 id="verdict-title">Suspicious</h3>
+            <p id="verdict-subtitle">Be careful and verify independently.</p>
+            <p class="disclaimer" id="disclaimer-text">Prototype assessment only. A low score does not prove that content is safe.</p>
+          </div>
+          <div class="score-block"><span id="risk-level">RISK LEVEL</span><strong id="score-number">0</strong><span>RISK SCORE / 100</span></div>
+        </div>
+        <div class="meter-track"><div id="risk-meter" class="meter-fill"></div></div>
+        <div class="meter-labels" aria-hidden="true"><span>Safe</span><span>Suspicious</span><span>Scam</span></div>
+        <div id="emergency-help" class="emergency-help hidden">
+          <strong>Already paid or shared an OTP?</strong>
+          <a href="tel:1930">Call 1930</a>
+          <span>or <a href="https://www.cybercrime.gov.in/" target="_blank" rel="noopener noreferrer">report at cybercrime.gov.in</a>.</span>
+        </div>
+        <div id="parameter-tags" class="parameter-tags hidden"></div>
+        <div class="result-details">
+          <div>
+            <h4>Why we flagged it</h4>
+            <ul id="reason-list" class="reason-list"></ul>
+          </div>
+          <div class="advice-box">
+            <span class="advice-icon">✓</span>
+            <div><h4>What to do next</h4><p id="advice-text"></p></div>
+          </div>
+        </div>
+        <div id="checked-content" class="checked-content hidden"></div>
+        <div class="result-actions">
+          <div class="action-btn-group">
+            <button id="report-button" class="secondary-button">＋ Report this</button>
+            <button id="share-link-button" class="secondary-button" title="Copy URL check link with query parameter">🔗 Copy check link</button>
+          </div>
+          <div class="feedback-group">
+            <span>Was this result correct?</span>
+            <button class="feedback-button" data-feedback="correct">Correct</button>
+            <button class="feedback-button" data-feedback="incorrect">Wrong</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="safety" class="safety-section">
+      <div class="safety-heading"><div><p class="section-kicker">STAY INFORMED</p><h2>Small checks. Safer choices.</h2></div><span class="safety-tag">SAFETY BASICS</span></div>
+      <div class="tips-grid">
+        <article class="tip-card"><span class="tip-number">01</span><div class="tip-icon">⌑</div><h3>Never share your OTP</h3><p>Do not share OTPs, PINs, CVVs or passwords with callers or message senders.</p></article>
+        <article class="tip-card"><span class="tip-number">02</span><div class="tip-icon">↗</div><h3>Check links & parameters</h3><p>Look closely at domain names and redirect query parameters. Verify destinations independently.</p></article>
+        <article class="tip-card"><span class="tip-number">03</span><div class="tip-icon">◖</div><h3>Hang up on coercive calls</h3><p>Law enforcement and banks never demand digital arrest, screen sharing, or urgent money transfers over calls.</p></article>
+      </div>
+      <div class="help-banner"><div><strong>Already lost money or shared banking credentials?</strong><p>Contact your bank immediately. In India, call the cyber-fraud helpline 1930 and report at cybercrime.gov.in.</p></div><span>1930</span></div>
+    </section>
+
+    <footer class="footer"><a class="brand footer-brand" href="/"><span class="brand-mark">S</span><span>Scam<span class="brand-blue">Shield</span></span></a><span>Built to encourage safer digital decisions.</span><span class="footer-disclaimer">Prototype · Verify important alerts independently</span></footer>
+  </main>
+
+  <div id="report-modal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="report-title">
+    <div class="modal">
+      <button id="close-modal" class="modal-close" aria-label="Close report dialog">×</button>
+      <p class="section-kicker">COMMUNITY REPORT</p><h2 id="report-title">Report this item</h2>
+      <p class="modal-copy">This demo does not submit reports to a server yet. You can review the report details below.</p>
+      <label class="field-label" for="report-type">ITEM TYPE</label>
+      <select id="report-type"><option>Message</option><option>Link</option><option>Call Audio / Recording</option><option>Phone number</option><option>UPI ID</option></select>
+      <label class="field-label" for="report-category">CATEGORY</label>
+      <select id="report-category"><option>Phishing</option><option>Fake KYC</option><option>Digital Arrest / Impersonation</option><option>Payment fraud</option><option>Prize / lottery scam</option><option>Other</option></select>
+      <label class="field-label" for="report-note">OPTIONAL NOTE</label>
+      <textarea id="report-note" rows="3" placeholder="Add context without sharing sensitive information."></textarea>
+      <button id="save-report" class="primary-button full-button">Review report</button>
+      <p id="report-confirmation" class="report-confirmation hidden"></p>
+    </div>
+  </div>
+  <div id="toast" class="toast" role="status"></div>
+  <script src="/static/app.js"></script>
+</body>
+</html>
