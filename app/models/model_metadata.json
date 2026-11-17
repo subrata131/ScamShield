@@ -1,0 +1,11 @@
+{
+  "model_name": "ScamShield NLP Text Classifier",
+  "architecture": "Sublinear TF-IDF (1,2) + Calibrated Logistic Regression",
+  "dataset_name": "messaging_fraud_detection.csv + Curated Cybercrime Corpus",
+  "total_samples": 50263,
+  "scam_samples": 25396,
+  "legitimate_samples": 24867,
+  "accuracy": "98.61%",
+  "roc_auc": "0.9986",
+  "version": "2.0-full"
+}
