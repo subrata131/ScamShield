@@ -19,6 +19,10 @@ def test_frontend_serves_html():
     assert 'id="url-input"' in html
     assert 'data-url=' in html
     assert 'redirect' in html
+    # Verify community threat feed and tactics elements exist
+    assert 'id="threat-feed-container"' in html
+    assert 'id="tactics-tags"' in html
+    assert 'id="save-report"' in html
 
 def test_frontend_serves_css():
     response = client.get("/static/style.css")
@@ -33,6 +37,11 @@ def test_frontend_serves_css():
     # Verify parameter pill styles exist
     assert '.param-badge' in css
     assert '.param-pill' in css
+    # Verify threat feed and tactics styles exist
+    assert '.tactics-tags' in css
+    assert '.tactic-pill' in css
+    assert '.feed-section' in css
+    assert '.feed-card' in css
 
 def test_frontend_serves_js():
     response = client.get("/static/app.js")
@@ -47,4 +56,6 @@ def test_frontend_serves_js():
     # Verify url parameter handling exists
     assert 'handleUrlParametersOnLoad' in js
     assert 'URLSearchParams' in js
-
+    # Verify community threat intelligence feed logic exists
+    assert 'fetchCommunityFeed' in js
+    assert 'threat-feed-container' in js

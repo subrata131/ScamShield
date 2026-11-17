@@ -1,15 +1,51 @@
-
 import ipaddress
 import re
+import unicodedata
 from difflib import SequenceMatcher
 from urllib.parse import parse_qsl, unquote, urlsplit
 
-import tldextract
+try:
+    import tldextract
+    _EXTRACTOR = tldextract.TLDExtract(suffix_list_urls=())
+    def extract_domain_parts(host: str) -> dict:
+        extracted = _EXTRACTOR(host)
+        registered_domain = (
+            f"{extracted.domain}.{extracted.suffix}"
+            if extracted.domain and extracted.suffix
+            else host
+        )
+        return {
+            "registered_domain": registered_domain,
+            "domain_label": extracted.domain or host,
+            "subdomain": extracted.subdomain or ""
+        }
+except ImportError:
+    # Reliable offline fallback extractor for environments without tldextract
+    COMMON_MULTI_SUFFIXES = {
+        "co.uk", "org.uk", "gov.uk", "ac.uk", "co.in", "net.in", "org.in", "gov.in",
+        "com.au", "net.au", "org.au", "co.nz", "com.br", "co.jp"
+    }
+    def extract_domain_parts(host: str) -> dict:
+        parts = host.lower().split(".")
+        if len(parts) >= 3 and f"{parts[-2]}.{parts[-1]}" in COMMON_MULTI_SUFFIXES:
+            suffix = f"{parts[-2]}.{parts[-1]}"
+            domain = parts[-3]
+            subdomain = ".".join(parts[:-3])
+        elif len(parts) >= 2:
+            suffix = parts[-1]
+            domain = parts[-2]
+            subdomain = ".".join(parts[:-2])
+        else:
+            suffix = ""
+            domain = host
+            subdomain = ""
+        registered_domain = f"{domain}.{suffix}" if domain and suffix else host
+        return {
+            "registered_domain": registered_domain,
+            "domain_label": domain or host,
+            "subdomain": subdomain
+        }
 
-
-# Use the package's bundled Public Suffix List.
-# This avoids requiring a network request during URL analysis.
-DOMAIN_EXTRACTOR = tldextract.TLDExtract(suffix_list_urls=())
 
 SUSPICIOUS_WORDS = {
     "verify", "account", "login", "update",
@@ -28,7 +64,8 @@ BRANDS = {
     "amazon", "google", "microsoft", "apple",
     "paypal", "facebook", "instagram", "netflix",
     "whatsapp", "flipkart", "ebay", "sbi",
-    "icici", "hdfc", "youtube", "telegram"
+    "icici", "hdfc", "youtube", "telegram",
+    "paytm", "phonepe", "gpay", "axis", "pnb"
 }
 
 # Common digit substitutions used in lookalike domains.
@@ -41,6 +78,19 @@ LOOKALIKE_MAP = str.maketrans({
     "7": "t"
 })
 
+# Suspicious TLDs heavily observed in transient phishing and malware campaigns
+ABUSE_TLDS = {
+    "top", "xyz", "icu", "buzz", "sbs", "cfd", "rest", "tk", "ml", "ga", "cf", "gq", "zip", "mov"
+}
+
+# Common Cyrillic and Greek homoglyphs used to spoof Latin letters
+HOMOGLYPH_MAP = {
+    "\u0430": "a", "\u0435": "e", "\u043e": "o", "\u0440": "p", "\u0441": "c",
+    "\u0443": "y", "\u0445": "x", "\u0456": "i", "\u03bf": "o", "\u03c1": "p",
+    "\u0410": "A", "\u0412": "B", "\u0415": "E", "\u041e": "O", "\u0420": "P",
+    "\u0421": "C", "\u0422": "T", "\u0425": "X"
+}
+
 
 def normalize_name(name: str) -> str:
     """Normalize a domain label for brand comparison."""
@@ -48,35 +98,32 @@ def normalize_name(name: str) -> str:
     return re.sub(r"[^a-z]", "", name)
 
 
-def get_domain_parts(host: str):
-    """Return registered domain and subdomain information."""
-    extracted = DOMAIN_EXTRACTOR(host)
+def detect_homoglyphs(raw_host: str) -> bool:
+    """Check if raw host uses mixed non-Latin confusables masquerading as Latin characters."""
+    has_homoglyph = any(char in HOMOGLYPH_MAP for char in raw_host)
+    if has_homoglyph:
+        return True
+    # Check if string mixes latin and cyrillic/greek scripts
+    scripts = set()
+    for char in raw_host:
+        if char.isalnum():
+            try:
+                script = unicodedata.name(char).split()[0]
+                scripts.add(script)
+            except Exception:
+                pass
+    if "CYRILLIC" in scripts and "LATIN" in scripts:
+        return True
+    return False
 
-    registered_domain = (
-        f"{extracted.domain}.{extracted.suffix}"
-        if extracted.domain and extracted.suffix
-        else host
-    )
 
-    return {
-        "registered_domain": registered_domain,
-        "domain_label": extracted.domain or host,
-        "subdomain": extracted.subdomain or ""
-    }
+def get_domain_parts(host: str) -> dict:
+    return extract_domain_parts(host)
 
 
 def detect_brand_impersonation(host: str, domain_parts: dict):
-    """
-    Detect likely brand impersonation.
-
-    Examples:
-    amaz0n-billing.com
-    amazon.com.fake-login.example
-    amazan-login.com
-    """
     registered_label = domain_parts["domain_label"]
-    subdomain_labels = domain_parts["subdomain"].split(".")
-    host_labels = host.split(".")
+    subdomain_labels = domain_parts["subdomain"].split(".") if domain_parts["subdomain"] else []
 
     normalized_registered = normalize_name(registered_label)
 
@@ -85,14 +132,11 @@ def detect_brand_impersonation(host: str, domain_parts: dict):
 
         # Exact brand domain label: amazon.com
         if normalized_registered == normalized_brand:
-            # A brand in a subdomain of a different registered domain
-            # is still suspicious.
             if any(
                 normalize_name(label) == normalized_brand
                 for label in subdomain_labels
             ):
                 return brand, "brand_in_subdomain"
-
             continue
 
         # Brand name embedded in the registered domain label:
@@ -112,7 +156,6 @@ def detect_brand_impersonation(host: str, domain_parts: dict):
             return brand, "lookalike_spelling"
 
         # Brand appearing in a misleading subdomain:
-        # amazon.com.fake-login.example
         if any(
             normalize_name(label) == normalized_brand
             for label in subdomain_labels
@@ -135,6 +178,10 @@ def analyze_url(url: str) -> dict:
             "advice": "Check the address and try again."
         }
 
+    # Handle UPI Payment Intent Deep Links
+    if original.startswith("upi://") or "://upi" in original:
+        return analyze_upi_link(original)
+
     candidate = (
         original if "://" in original
         else "https://" + original
@@ -150,6 +197,7 @@ def analyze_url(url: str) -> dict:
         if parsed.scheme not in {"http", "https"} or not hostname:
             raise ValueError("Unsupported URL")
 
+        raw_hostname = hostname
         # Convert internationalized hostnames to ASCII.
         host = hostname.encode("idna").decode("ascii").lower().rstrip(".")
 
@@ -188,14 +236,21 @@ def analyze_url(url: str) -> dict:
             25
         )
 
-    # 3. Punycode / encoded internationalized domain
+    # 3. Homoglyph / Mixed-script spoofing check
+    if detect_homoglyphs(raw_hostname):
+        add_finding(
+            "The domain uses visual lookalike non-Latin characters (homoglyph attack) to impersonate a legitimate name.",
+            40
+        )
+
+    # 4. Punycode / encoded internationalized domain
     if any(label.startswith("xn--") for label in host.split(".")):
         add_finding(
             "The domain contains an encoded internationalized hostname.",
             20
         )
 
-    # 4. URL shortener
+    # 5. URL shortener
     if host in SHORTENERS or any(
         host.endswith("." + shortener) for shortener in SHORTENERS
     ):
@@ -204,7 +259,7 @@ def analyze_url(url: str) -> dict:
             25
         )
 
-    # 5. IP address instead of a domain
+    # 6. IP address instead of a domain
     try:
         ipaddress.ip_address(host)
         is_ip = True
@@ -217,7 +272,7 @@ def analyze_url(url: str) -> dict:
             30
         )
 
-    # 6. Domain and subdomain analysis
+    # 7. Domain and subdomain analysis
     domain_parts = get_domain_parts(host)
 
     subdomain_labels = (
@@ -232,7 +287,7 @@ def analyze_url(url: str) -> dict:
             15
         )
 
-    # 7. Suspicious keywords in the hostname
+    # 8. Suspicious keywords in the hostname
     matched_words = sorted(
         word for word in SUSPICIOUS_WORDS if word in host
     )
@@ -244,7 +299,15 @@ def analyze_url(url: str) -> dict:
             15
         )
 
-    # 8. Brand impersonation and typosquatting
+    # 9. Abuse-prone TLD check when paired with words or brands
+    tld = host.split(".")[-1] if "." in host else ""
+    if tld in ABUSE_TLDS and (matched_words or any(b in host for b in BRANDS)):
+        add_finding(
+            f"The domain uses the '.{tld}' top-level domain frequently exploited for high-turnover phishing campaigns.",
+            25
+        )
+
+    # 10. Brand impersonation and typosquatting
     brand, brand_type = detect_brand_impersonation(host, domain_parts)
 
     if brand:
@@ -266,7 +329,7 @@ def analyze_url(url: str) -> dict:
 
         add_finding(message, 55)
 
-    # 9. URL Query Parameter Checking
+    # 11. URL Query Parameter Checking
     query_params = parse_qsl(parsed.query, keep_blank_values=True)
     param_keys = [k for k, _ in query_params]
     flagged_params = []
@@ -334,7 +397,7 @@ def analyze_url(url: str) -> dict:
                     25
                 )
 
-    # 10. Final risk calculation
+    # 12. Final risk calculation
     score = min(score, 100)
 
     if score >= 65:
@@ -380,4 +443,51 @@ def analyze_url(url: str) -> dict:
             "It does not visit the link, verify website ownership, "
             "or guarantee that a website is safe."
         )
+    }
+
+
+def analyze_upi_link(upi_url: str) -> dict:
+    """Specialized analyzer for UPI deep links (upi://pay?...) to detect fraudulent collect requests."""
+    parsed = urlsplit(upi_url)
+    params = dict(parse_qsl(parsed.query))
+    reasons = [
+        "This is a direct UPI Payment link (upi://pay)."
+    ]
+    score = 40
+    payee = params.get("pa", "unknown")
+    note = params.get("tn", "").lower()
+    amount = params.get("am", "")
+
+    if any(keyword in note for keyword in ["refund", "cashback", "reward", "lottery", "prize", "kyc"]):
+        reasons.append(
+            f"The payment note mentions '{note}', but in UPI you only enter a PIN to SEND money, never to receive refunds or rewards."
+        )
+        score += 45
+
+    if amount:
+        reasons.append(f"This link requests an immediate transfer of ₹{amount}.")
+
+    score = min(score, 100)
+    verdict = "suspicious" if score >= 25 else "safe"
+    risk_level = "high" if score >= 65 else "medium"
+
+    return {
+        "url": upi_url,
+        "hostname": "upi-payment-gateway",
+        "registered_domain": "upi",
+        "verdict": verdict,
+        "risk_level": risk_level,
+        "risk_score": score,
+        "reasons": reasons,
+        "url_parameters": {
+            "count": len(params),
+            "keys": list(params.keys()),
+            "flagged": ["tn"] if "refund" in note or "prize" in note else [],
+        },
+        "method": "upi_intent_heuristics",
+        "advice": (
+            "Never approve or enter your UPI PIN on unsolicited payment links. "
+            "Receiving money in UPI does NOT require entering a PIN."
+        ),
+        "disclaimer": "ScamShield UPI inspection. Always verify payee VPA before approving any transaction."
     }

@@ -166,6 +166,9 @@ flowchart TD
 | Technology | Purpose |
 |---|---|
 | Python | Core application and detection logic |
+| Scikit-learn | Machine Learning NLP classification pipeline (TF-IDF + Logistic Regression) |
+| Joblib | Model serialization & persistence |
+| SQLite3 | Persistent community threat intelligence database |
 | FastAPI | Backend REST API |
 | Pydantic | Request validation |
 | HTML5 | Frontend structure |
@@ -277,9 +280,14 @@ ScamShield provides REST API endpoints for message and URL analysis.
 | Method | Endpoint | Description |
 |---|---|---|
 | GET | `/` | Serves the frontend |
-| GET | `/api/health` | Checks backend health |
-| POST | `/api/analyze` | Analyzes a suspicious message |
-| POST | `/api/analyze/url` | Analyzes a suspicious URL |
+| GET | `/api/health` | Checks backend health & threat network status |
+| POST | `/api/analyze` | Analyzes message with leetspeak decoding & Hinglish detection |
+| POST | `/api/analyze/url` | Analyzes URLs, homoglyphs, open-redirects & UPI intents |
+| POST | `/api/analyze/audio` | Analyzes voice call transcript for coercion & digital arrest |
+| POST | `/api/analyze/audio/upload` | Uploads and processes audio recordings |
+| POST | `/api/reports` | Catalogs scam report in community threat database |
+| GET | `/api/reports/feed` | Retrieves live community threat intelligence feed |
+| GET | `/api/reports/stats` | Retrieves aggregate scam analytics & breakdown |
 
 ### Health Check
 
@@ -391,19 +399,17 @@ Current limitations include:
 
 ---
 
-## 🔮 Future Improvements
+## 🔮 Future Improvements & Progress
 
-Planned improvements include:
-
-- [ ] Machine-learning-based scam message classification.
-- [ ] Improved phishing URL detection.
-- [ ] Integration with domain reputation services.
-- [ ] Better detection of Unicode and character-substitution attacks.
-- [ ] Hindi and Bengali language support.
-- [ ] Audio and call scam analysis.
-- [ ] Persistent user reporting and feedback.
-- [ ] Improved security testing and false-positive evaluation.
-- [ ] Deployment of the application for public access.
+- [x] Persistent user reporting & crowdsourced threat database (`app/database.py` with SQLite).
+- [x] Live Community Threat Intelligence Feed with real-time alerts.
+- [x] Advanced homoglyph & mixed-script Unicode attack detection (`app/url_checker.py`).
+- [x] Obfuscation & leetspeak normalization (`k.y.c`, `0TP`, `sh@re`, `p@ssword`).
+- [x] High-prevalence Indian scam detection: Digital Arrest, Electricity cut, Telegram tasks, and UPI collect fraud.
+- [x] Voice call analysis pipeline & coercion pattern recognition (`/api/analyze/audio`).
+- [ ] On-device transformer-based model fine-tuning.
+- [ ] Integration with live domain reputation APIs (Google Safe Browsing, VirusTotal).
+- [ ] Native Android/iOS dialer hook for real-time call screening.
 
 ---
 

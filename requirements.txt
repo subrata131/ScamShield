@@ -3,3 +3,5 @@ uvicorn[standard]
 pytest
 httpx
 tldextract
+scikit-learn
+joblib

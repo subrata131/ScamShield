@@ -15,6 +15,7 @@
     </a>
     <nav aria-label="Main navigation">
       <a class="nav-link active" href="#checker">Checker</a>
+      <a class="nav-link" href="#feed">Threat Feed</a>
       <a class="nav-link" href="#safety">Safety tips</a>
     </nav>
     <div class="topbar-actions">
@@ -23,15 +24,15 @@
         <span class="theme-toggle-icon dark-icon" aria-hidden="true">🌙</span>
         <span id="theme-text" class="theme-text">Dark</span>
       </button>
-      <span class="privacy-pill"><span class="dot"></span> Privacy-first demo</span>
+      <span class="privacy-pill"><span class="dot"></span> Community Threat Network</span>
     </div>
   </header>
 
   <main class="page-shell">
     <section class="hero" id="checker">
-      <div class="eyebrow"><span class="eyebrow-line"></span> DIGITAL SAFETY ASSISTANT</div>
+      <div class="eyebrow"><span class="eyebrow-line"></span> DIGITAL DEFENSE & EXPLAINABLE THREAT ANALYSIS</div>
       <h1>Pause. Check.<br><span>Stay protected.</span></h1>
-      <p class="hero-copy">Check suspicious messages, links and call audio recordings before you respond, click or share personal information.</p>
+      <p class="hero-copy">Inspect suspicious messages, links, UPI payment intents, and voice call recordings before you respond, click, or transfer money.</p>
     </section>
 
     <section class="workspace">
@@ -46,8 +47,8 @@
 
         <div class="tabs" role="tablist" aria-label="Content type">
           <button class="tab active" role="tab" aria-selected="true" data-tab="message">▤ <span>Message</span></button>
-          <button class="tab" role="tab" aria-selected="false" data-tab="link">↗ <span>Link</span></button>
-          <button class="tab" role="tab" aria-selected="false" data-tab="audio">◖ <span>Audio</span></button>
+          <button class="tab" role="tab" aria-selected="false" data-tab="link">↗ <span>Link / UPI</span></button>
+          <button class="tab" role="tab" aria-selected="false" data-tab="audio">◖ <span>Audio / Call</span></button>
         </div>
 
         <div id="message-pane" class="tab-pane">
@@ -59,21 +60,24 @@
             <button class="sample-chip" data-sample="scam">Fake KYC</button>
             <button class="sample-chip" data-sample="otp">Bank OTP</button>
             <button class="sample-chip" data-sample="prize">Lottery win</button>
+            <button class="sample-chip" data-sample="electricity">Electricity cut</button>
+            <button class="sample-chip" data-sample="telegram">Telegram task</button>
             <button class="sample-chip" data-sample="normal">Normal message</button>
           </div>
         </div>
 
         <div id="link-pane" class="tab-pane hidden">
-          <label class="field-label" for="url-input">PASTE THE LINK</label>
+          <label class="field-label" for="url-input">PASTE THE LINK OR UPI INTENT</label>
           <input id="url-input" type="url" maxlength="2048" placeholder="https://example.com/verify?redirect=https://amaz0n-fake.com">
           <div class="input-meta">
-            <span class="field-help">ScamShield checks hostname, protocols, and URL query parameters. It will not visit the site.</span>
+            <span class="field-help">ScamShield inspects hostname, query parameters, homoglyphs, and UPI collect intents.</span>
             <span id="url-param-indicator" class="param-badge hidden">Parameter detected</span>
           </div>
           <div class="samples">
             <span class="sample-label">TRY A SAMPLE LINK</span>
             <button class="sample-chip" data-url="https://example.com/login?redirect=https://amaz0n-fake.com/login">Redirect parameter</button>
             <button class="sample-chip" data-url="https://bank.example.com/auth?token=secret987&cvv=123">Credential parameter</button>
+            <button class="sample-chip" data-url="upi://pay?pa=scammer@okaxis&pn=KYCOfficer&am=2500&tn=Claim_Refund_Reward">Fake UPI Refund</button>
             <button class="sample-chip" data-url="https://update-service.example.com/download?file=security_patch.exe">File download parameter</button>
             <button class="sample-chip" data-url="http://verify.account.example.com/login">Suspicious HTTP link</button>
             <button class="sample-chip" data-url="https://example.com/search?q=safe">Safe link with parameter</button>
@@ -122,7 +126,7 @@
         </div>
 
         <div class="action-row">
-          <span class="privacy-note">⌑ Your content is analyzed in memory and is not saved by this demo.</span>
+          <span class="privacy-note">⌑ Analyzed locally with explainable heuristics & zero-trust privacy.</span>
           <button id="analyze-button" class="primary-button">Analyze now <span>→</span></button>
         </div>
         <div id="error-box" class="error-box hidden" role="alert"></div>
@@ -131,7 +135,7 @@
       <aside class="side-note">
         <div class="side-icon">✳</div>
         <h3>Think before you tap.</h3>
-        <p>Scammers often create urgency, impersonate trusted organisations and ask for sensitive information.</p>
+        <p>Scammers exploit urgency, fear of authority, and unfamiliar technology like screen sharing or UPI collect requests.</p>
         <a href="#safety">View safety tips <span>→</span></a>
         <div class="side-divider"></div>
         <div class="mini-stat"><strong>01</strong><span>Check the sender / caller</span></div>
@@ -152,7 +156,7 @@
             <span id="verdict-eyebrow" class="verdict-eyebrow">RESULT</span>
             <h3 id="verdict-title">Suspicious</h3>
             <p id="verdict-subtitle">Be careful and verify independently.</p>
-            <p class="disclaimer" id="disclaimer-text">Prototype assessment only. A low score does not prove that content is safe.</p>
+            <p class="disclaimer" id="disclaimer-text">Automated assessment only. A low score does not prove that content is safe.</p>
           </div>
           <div class="score-block"><span id="risk-level">RISK LEVEL</span><strong id="score-number">0</strong><span>RISK SCORE / 100</span></div>
         </div>
@@ -164,6 +168,7 @@
           <span>or <a href="https://www.cybercrime.gov.in/" target="_blank" rel="noopener noreferrer">report at cybercrime.gov.in</a>.</span>
         </div>
         <div id="parameter-tags" class="parameter-tags hidden"></div>
+        <div id="tactics-tags" class="tactics-tags hidden"></div>
         <div class="result-details">
           <div>
             <h4>Why we flagged it</h4>
@@ -177,7 +182,7 @@
         <div id="checked-content" class="checked-content hidden"></div>
         <div class="result-actions">
           <div class="action-btn-group">
-            <button id="report-button" class="secondary-button">＋ Report this</button>
+            <button id="report-button" class="secondary-button">＋ Report to Community Feed</button>
             <button id="share-link-button" class="secondary-button" title="Copy URL check link with query parameter">🔗 Copy check link</button>
           </div>
           <div class="feedback-group">
@@ -189,11 +194,33 @@
       </div>
     </section>
 
+    <!-- Live Community Threat Intelligence Feed -->
+    <section id="feed" class="feed-section">
+      <div class="feed-heading">
+        <div>
+          <p class="section-kicker">COMMUNITY THREAT INTELLIGENCE</p>
+          <h2>⚡ Live Community Scam Alerts</h2>
+        </div>
+        <button id="refresh-feed-btn" class="secondary-button feed-refresh-btn" type="button">↻ Refresh Alerts</button>
+      </div>
+      <p class="feed-subtext">Real-time scam campaigns flagged and verified across the ScamShield peer network.</p>
+
+      <div class="feed-stats-row">
+        <div class="feed-stat-card"><strong id="stat-total-reports">5+</strong><span>Cataloged Threats</span></div>
+        <div class="feed-stat-card"><strong id="stat-top-tactic">Digital Arrest</strong><span>Top Scam Pattern</span></div>
+        <div class="feed-stat-card"><strong>Active</strong><span>Network Status</span></div>
+      </div>
+
+      <div id="threat-feed-container" class="feed-grid">
+        <!-- Rendered dynamically via app.js -->
+      </div>
+    </section>
+
     <section id="safety" class="safety-section">
       <div class="safety-heading"><div><p class="section-kicker">STAY INFORMED</p><h2>Small checks. Safer choices.</h2></div><span class="safety-tag">SAFETY BASICS</span></div>
       <div class="tips-grid">
         <article class="tip-card"><span class="tip-number">01</span><div class="tip-icon">⌑</div><h3>Never share your OTP</h3><p>Do not share OTPs, PINs, CVVs or passwords with callers or message senders.</p></article>
-        <article class="tip-card"><span class="tip-number">02</span><div class="tip-icon">↗</div><h3>Check links & parameters</h3><p>Look closely at domain names and redirect query parameters. Verify destinations independently.</p></article>
+        <article class="tip-card"><span class="tip-number">02</span><div class="tip-icon">↗</div><h3>Check links & parameters</h3><p>Look closely at domain names, redirect parameters, and lookalike characters.</p></article>
         <article class="tip-card"><span class="tip-number">03</span><div class="tip-icon">◖</div><h3>Hang up on coercive calls</h3><p>Law enforcement and banks never demand digital arrest, screen sharing, or urgent money transfers over calls.</p></article>
       </div>
       <div class="help-banner"><div><strong>Already lost money or shared banking credentials?</strong><p>Contact your bank immediately. In India, call the cyber-fraud helpline 1930 and report at cybercrime.gov.in.</p></div><span>1930</span></div>
@@ -206,14 +233,34 @@
     <div class="modal">
       <button id="close-modal" class="modal-close" aria-label="Close report dialog">×</button>
       <p class="section-kicker">COMMUNITY REPORT</p><h2 id="report-title">Report this item</h2>
-      <p class="modal-copy">This demo does not submit reports to a server yet. You can review the report details below.</p>
+      <p class="modal-copy">Submissions are saved to the ScamShield threat database to help alert other users.</p>
+      
       <label class="field-label" for="report-type">ITEM TYPE</label>
-      <select id="report-type"><option>Message</option><option>Link</option><option>Call Audio / Recording</option><option>Phone number</option><option>UPI ID</option></select>
-      <label class="field-label" for="report-category">CATEGORY</label>
-      <select id="report-category"><option>Phishing</option><option>Fake KYC</option><option>Digital Arrest / Impersonation</option><option>Payment fraud</option><option>Prize / lottery scam</option><option>Other</option></select>
-      <label class="field-label" for="report-note">OPTIONAL NOTE</label>
-      <textarea id="report-note" rows="3" placeholder="Add context without sharing sensitive information."></textarea>
-      <button id="save-report" class="primary-button full-button">Review report</button>
+      <select id="report-type">
+        <option value="message">Message (SMS / WhatsApp)</option>
+        <option value="link">Link / Domain</option>
+        <option value="audio">Call Audio / Recording</option>
+        <option value="upi">UPI ID / Payment Link</option>
+      </select>
+      
+      <label class="field-label" for="report-content">CONTENT TO REPORT</label>
+      <textarea id="report-content" rows="3" placeholder="Paste the message text, link URL, or call details..."></textarea>
+      
+      <label class="field-label" for="report-category">PRIMARY SCAM TACTIC</label>
+      <select id="report-category">
+        <option value="Digital Arrest / Impersonation">Digital Arrest / Impersonation</option>
+        <option value="Fake KYC / Banking">Fake KYC / Banking</option>
+        <option value="Electricity / Utility Cut">Electricity / Utility Cut</option>
+        <option value="Payment / UPI fraud">Payment / UPI fraud</option>
+        <option value="Telegram / Task Scam">Telegram / Task Scam</option>
+        <option value="Prize / lottery scam">Prize / lottery scam</option>
+        <option value="Other">Other</option>
+      </select>
+      
+      <label class="field-label" for="report-note">OPTIONAL CONTEXT</label>
+      <input id="report-note" type="text" placeholder="e.g. Sender number, location, app name...">
+      
+      <button id="save-report" class="primary-button full-button">Submit to Threat Network</button>
       <p id="report-confirmation" class="report-confirmation hidden"></p>
     </div>
   </div>

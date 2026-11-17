@@ -19,6 +19,8 @@ const messageSamples = {
   scam: "URGENT! Your KYC has expired. Share your OTP immediately or your bank account will be blocked.",
   otp: "Your bank OTP for the transaction is 123456. Do not share this OTP with anyone.",
   prize: "Congratulations! You have won a lottery. Pay a processing fee to claim your prize.",
+  electricity: "Dear consumer, your electricity power will be disconnected tonight at 9:30 PM due to unpaid bill. Call our electricity officer immediately on 9876543210.",
+  telegram: "Earn Rs. 3000 to Rs. 5000 daily by simply liking YouTube videos. Work from home 1 hour daily. Contact our HR manager on Telegram @EarnDaily_HR.",
   normal: "Hi, the class has been moved to 10 AM tomorrow. See you there."
 };
 
@@ -472,6 +474,28 @@ function renderResult(data, input, type) {
     }
   }
 
+  // Render Social Engineering Tactics if present
+  const tacticsContainer = $("tactics-tags");
+  if (tacticsContainer) {
+    tacticsContainer.replaceChildren();
+    if (data.tactics && data.tactics.length > 0) {
+      tacticsContainer.classList.remove("hidden");
+      const titleSpan = document.createElement("span");
+      titleSpan.className = "tactic-title";
+      titleSpan.textContent = "Social Engineering Tactics Identified:";
+      tacticsContainer.appendChild(titleSpan);
+
+      data.tactics.forEach(tactic => {
+        const pill = document.createElement("span");
+        pill.className = "tactic-pill";
+        pill.textContent = `⚡ ${tactic}`;
+        tacticsContainer.appendChild(pill);
+      });
+    } else {
+      tacticsContainer.classList.add("hidden");
+    }
+  }
+
   // Render Reason List
   const list = $("reason-list");
   list.replaceChildren();
@@ -598,31 +622,179 @@ $("report-button")?.addEventListener("click", () => {
   $("report-confirmation")?.classList.add("hidden");
   const reportType = $("report-type");
   if (reportType) {
-    if (activeTab === "audio") reportType.value = "Call Audio / Recording";
-    else if (activeTab === "link") reportType.value = "Link";
-    else reportType.value = "Message";
+    if (activeTab === "audio") reportType.value = "audio";
+    else if (activeTab === "link") reportType.value = "link";
+    else reportType.value = "message";
+  }
+  const reportContent = $("report-content");
+  if (reportContent && lastInput) {
+    reportContent.value = lastInput;
   }
 });
+
 $("close-modal")?.addEventListener("click", () => $("report-modal")?.classList.add("hidden"));
 $("report-modal")?.addEventListener("click", e => {
   if (e.target === $("report-modal")) $("report-modal")?.classList.add("hidden");
 });
-$("save-report")?.addEventListener("click", () => {
-  $("report-confirmation").textContent = "Report details reviewed locally. Server-side community reporting will be added in a future phase.";
-  $("report-confirmation")?.classList.remove("hidden");
+
+$("save-report")?.addEventListener("click", async () => {
+  const saveBtn = $("save-report");
+  const confirmation = $("report-confirmation");
+  const category = $("report-type")?.value || "message";
+  const content = $("report-content")?.value?.trim() || lastInput || "";
+  const tactic = $("report-category")?.value || "Suspicious Activity";
+  const notes = $("report-note")?.value?.trim() || "";
+
+  if (!content) {
+    confirmation.textContent = "Please provide the message text, link, or call details to report.";
+    confirmation.classList.remove("hidden");
+    return;
+  }
+
+  saveBtn.disabled = true;
+  saveBtn.textContent = "Cataloging threat…";
+
+  try {
+    const res = await fetch("/api/reports", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        category: category,
+        content: content,
+        verdict: lastResult?.verdict || "scam",
+        risk_score: lastResult?.risk_score || 80,
+        tactics: [tactic],
+        notes: notes,
+      })
+    });
+    const resData = await res.json();
+    if (!res.ok) throw new Error(resData.detail || "Submission failed");
+
+    confirmation.textContent = `✓ Threat Report #${resData.report?.id || "LOG"} cataloged in ScamShield Community Network. Thank you!`;
+    confirmation.classList.remove("hidden");
+    toast("Threat reported to community network");
+
+    // Refresh live feed
+    fetchCommunityFeed();
+
+    setTimeout(() => {
+      $("report-modal")?.classList.add("hidden");
+      saveBtn.disabled = false;
+      saveBtn.textContent = "Submit to Threat Network";
+      confirmation.classList.add("hidden");
+    }, 1800);
+  } catch (err) {
+    confirmation.textContent = `Could not submit report: ${err.message}`;
+    confirmation.classList.remove("hidden");
+    saveBtn.disabled = false;
+    saveBtn.textContent = "Submit to Threat Network";
+  }
 });
+
 document.addEventListener("keydown", e => {
   if (e.key === "Escape") $("report-modal")?.classList.add("hidden");
+});
+
+// --- Live Community Threat Feed ---
+async function fetchCommunityFeed() {
+  const container = $("threat-feed-container");
+  if (!container) return;
+
+  try {
+    const [feedRes, statsRes] = await Promise.all([
+      fetch("/api/reports/feed?limit=6"),
+      fetch("/api/reports/stats")
+    ]);
+    const feedData = await feedRes.json();
+    const statsData = await statsRes.json();
+
+    if (statsData.total_reports !== undefined) {
+      if ($("stat-total-reports")) $("stat-total-reports").textContent = `${statsData.total_reports}+`;
+      const cats = statsData.categories || {};
+      const topCat = Object.keys(cats).sort((a, b) => cats[b] - cats[a])[0] || "Digital Arrest";
+      if ($("stat-top-tactic")) $("stat-top-tactic").textContent = topCat.toUpperCase();
+    }
+
+    const reports = feedData.reports || [];
+    container.replaceChildren();
+
+    if (reports.length === 0) {
+      container.innerHTML = '<p class="feed-subtext">No threat alerts recorded yet.</p>';
+      return;
+    }
+
+    reports.forEach(r => {
+      const card = document.createElement("article");
+      card.className = "feed-card";
+
+      const header = document.createElement("div");
+      header.className = "feed-card-header";
+
+      const catBadge = document.createElement("span");
+      catBadge.className = "feed-category-badge";
+      catBadge.textContent = r.category;
+
+      const riskBadge = document.createElement("span");
+      riskBadge.className = "feed-risk-badge";
+      riskBadge.textContent = `${r.risk_score} Risk`;
+
+      header.appendChild(catBadge);
+      if (r.report_count && r.report_count > 1) {
+        const countBadge = document.createElement("span");
+        countBadge.className = "feed-count-badge";
+        countBadge.textContent = `🔥 ${r.report_count} reports`;
+        header.appendChild(countBadge);
+      }
+      header.appendChild(riskBadge);
+
+      const body = document.createElement("p");
+      body.className = "feed-card-body";
+      body.textContent = `"${r.content}"`;
+
+      const footer = document.createElement("div");
+      footer.className = "feed-card-footer";
+
+      const tagsContainer = document.createElement("div");
+      tagsContainer.className = "feed-card-tags";
+      (r.tactics || []).slice(0, 2).forEach(t => {
+        const miniTag = document.createElement("span");
+        miniTag.className = "feed-mini-tag";
+        miniTag.textContent = t;
+        tagsContainer.appendChild(miniTag);
+      });
+
+      const dateStr = r.created_at ? new Date(r.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "Recent";
+      const timeSpan = document.createElement("span");
+      timeSpan.textContent = dateStr;
+
+      footer.appendChild(tagsContainer);
+      footer.appendChild(timeSpan);
+
+      card.appendChild(header);
+      card.appendChild(body);
+      card.appendChild(footer);
+      container.appendChild(card);
+    });
+  } catch (err) {
+    console.warn("Could not load community feed:", err);
+  }
+}
+
+$("refresh-feed-btn")?.addEventListener("click", () => {
+  fetchCommunityFeed();
+  toast("Refreshed live community alerts");
 });
 
 // Initialization on DOMContentLoaded
 document.addEventListener("DOMContentLoaded", () => {
   initTheme();
   handleUrlParametersOnLoad();
+  fetchCommunityFeed();
 });
 
 // In case script runs after DOM is ready
 if (document.readyState === "interactive" || document.readyState === "complete") {
   initTheme();
   handleUrlParametersOnLoad();
+  fetchCommunityFeed();
 }
