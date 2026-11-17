@@ -68,6 +68,19 @@ BRANDS = {
     "paytm", "phonepe", "gpay", "axis", "pnb"
 }
 
+OFFICIAL_LEGITIMATE_DOMAINS = {
+    "icicibank.com", "icicibank.co.in", "hdfcbank.com", "hdfcbank.co.in",
+    "sbi.co.in", "onlinesbi.sbi", "onlinesbi.com", "statebankofindia.com",
+    "axisbank.com", "axisbank.co.in", "pnbindia.in", "pnb.ac.in",
+    "paytm.com", "paytmbank.com", "phonepe.com",
+    "amazon.com", "amazon.in", "amazon.co.uk", "amazon.ca", "amazon.de",
+    "google.com", "google.co.in", "google.co.uk",
+    "apple.com", "icloud.com", "microsoft.com", "live.com", "office.com",
+    "paypal.com", "paypal.me", "netflix.com",
+    "whatsapp.com", "wa.me", "telegram.org", "t.me",
+    "flipkart.com", "ebay.com", "ebay.in", "youtube.com"
+}
+
 # Common digit substitutions used in lookalike domains.
 LOOKALIKE_MAP = str.maketrans({
     "0": "o",
@@ -122,6 +135,10 @@ def get_domain_parts(host: str) -> dict:
 
 
 def detect_brand_impersonation(host: str, domain_parts: dict):
+    registered_domain = domain_parts["registered_domain"].lower()
+    if registered_domain in OFFICIAL_LEGITIMATE_DOMAINS:
+        return None, None
+
     registered_label = domain_parts["domain_label"]
     subdomain_labels = domain_parts["subdomain"].split(".") if domain_parts["subdomain"] else []
 
